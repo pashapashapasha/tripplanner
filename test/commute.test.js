@@ -216,3 +216,30 @@ test('an unconfirmed train inside the predicted window is dropped, whatever its 
   assert.equal(j.length, 7); // later trips beyond the predicted window are still estimated
   assert.ok(j[6].arrEstimated);
 });
+
+test('a predicted arrival beats the scheduled departure (delays are not hidden)', () => {
+  const at = (m) => new Date(NOW + m * MIN).toISOString();
+  const call = (stop, aimed, expected) => ({
+    StopPointRef: stop,
+    AimedArrivalTime: at(aimed),
+    AimedDepartureTime: at(aimed),
+    ExpectedArrivalTime: at(expected), // 511 often omits ExpectedDepartureTime for Muni
+    ExpectedDepartureTime: null,
+  });
+  const visit = (stop, aimed, expected) => ({
+    MonitoringRef: stop,
+    MonitoredVehicleJourney: {
+      LineRef: 'J', DirectionRef: 'IB', VehicleRef: '2072', DestinationName: 'Embarcadero Station',
+      FramedVehicleJourneyRef: { DatedVehicleJourneyRef: 'J-LATE' },
+      MonitoredCall: call(stop, aimed, expected),
+    },
+  });
+  const visits = parseVisits({ ServiceDelivery: { StopMonitoringDelivery: { MonitoredStopVisit: [
+    visit('14001', 22, 25), visit('16995', 42, 43),
+  ] } } });
+  const [leg] = muniLegs(visits, allIds).work.j;
+  assert.equal(leg.dep, NOW + 25 * MIN);
+  assert.equal(leg.delayMin, 3);
+  assert.equal(leg.arr, NOW + 43 * MIN);
+  assert.ok(leg.depLive && leg.arrLive);
+});

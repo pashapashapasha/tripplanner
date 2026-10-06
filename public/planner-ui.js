@@ -188,10 +188,16 @@ function legKind(tr, i) {
   return i === 0 ? tr.route.first : tr.route.second;
 }
 
+/** ' · 3 min late' when a live prediction is running behind schedule. */
+function late(leg) {
+  const mins = leg.delayMin ?? Math.round((leg.delaySec || 0) / 60);
+  return mins >= 2 ? ` · <span class="late">${mins} min late</span>` : '';
+}
+
 function legText(kind, leg) {
-  if (kind === 'j') return `J Church to ${esc(leg.destination || (state.direction === 'work' ? 'downtown' : 'Balboa Park'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}`;
-  if (kind === 't') return `T Third to ${esc(leg.destination || (state.direction === 'work' ? 'Sunnydale' : 'Chinatown'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}`;
-  return `${esc(leg.destination || 'BART')} train${leg.cars ? ` · ${leg.cars} cars` : ''}${leg.delaySec > 60 ? ` · ${Math.round(leg.delaySec / 60)} min late` : ''}`;
+  if (kind === 'j') return `J Church to ${esc(leg.destination || (state.direction === 'work' ? 'downtown' : 'Balboa Park'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}${late(leg)}`;
+  if (kind === 't') return `T Third to ${esc(leg.destination || (state.direction === 'work' ? 'Sunnydale' : 'Chinatown'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}${late(leg)}`;
+  return `${esc(leg.destination || 'BART')} train${leg.cars ? ` · ${leg.cars} cars` : ''}${late(leg)}`;
 }
 
 const est = (leg) => (leg.arrEstimated ? ' <abbr class="est" title="Estimated from typical ride time">est.</abbr>' : '');
@@ -250,9 +256,9 @@ function renderBoards() {
   const d = state.direction;
   const legs = live.legs[d];
   const train = {
-    j: (l) => `J to ${esc(l.destination || '—')}`,
-    t: (l) => `T to ${esc(l.destination || '—')}`,
-    bart: (l) => `<i class="swatch" style="background:${esc(l.color)}"></i>${esc(l.destination)}${l.cars ? ` · ${l.cars} cars` : ''}`,
+    j: (l) => `J to ${esc(l.destination || '—')}${late(l)}`,
+    t: (l) => `T to ${esc(l.destination || '—')}${late(l)}`,
+    bart: (l) => `<i class="swatch" style="background:${esc(l.color)}"></i>${esc(l.destination)}${l.cars ? ` · ${l.cars} cars` : ''}${late(l)}`,
   };
   $('boards').innerHTML = BOARD_ORDER[d].map((kind) => {
     const { to, board } = LEGS[d][kind];

@@ -78,6 +78,7 @@ section { margin-top: 22px; }
 .tag.best { border-color: var(--accent); color: var(--accent); }
 .tag.warn { border-color: var(--warn); color: var(--warn); }
 .est { color: var(--warn); font-size: 11px; text-decoration: none; cursor: help; }
+.late { color: var(--warn); }
 .sched { color: var(--muted); font-size: 11px; text-decoration: none; cursor: help; }
 
 details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 8px; }
