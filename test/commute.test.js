@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseStops, resolvePlaces, parseVisits, muniLegs } from '../lib/muni.js';
 import { parseEtd, parseRideMinutes } from '../lib/bart.js';
-import { buildItineraries } from '../lib/itinerary.js';
+import { buildItineraries } from '../public/itinerary.js';
 import { DEFAULT_SETTINGS } from '../lib/config.js';
 import { demoStops, demoStopMonitoring, demoEtd, demoSchedule } from '../lib/demo.js';
 

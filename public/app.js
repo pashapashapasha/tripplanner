@@ -1,4 +1,4 @@
-import { buildItineraries } from '/lib/itinerary.js';
+import { buildItineraries } from './itinerary.js';
 
 const REFRESH_MS = 30000;
 const $ = (id) => document.getElementById(id);
@@ -40,8 +40,8 @@ async function refresh() {
 
 function render() {
   if (!data) return;
-  // Shift server times by local clock drift so countdowns stay right between refreshes.
-  const now = data.now + (Date.now() - lastFetch);
+  // Device clock, not data.now: the API response may come from Vercel's CDN cache.
+  const now = Date.now();
   renderStatus(now);
   renderTrips(now);
   renderBoards(now);
@@ -177,7 +177,7 @@ for (const b of document.querySelectorAll('.filters button')) {
 }
 
 refresh();
-setInterval(refresh, REFRESH_MS);
+setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
 setInterval(render, 1000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && Date.now() - lastFetch > 10000) refresh();
