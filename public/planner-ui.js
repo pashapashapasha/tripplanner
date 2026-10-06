@@ -188,16 +188,23 @@ function legKind(tr, i) {
   return i === 0 ? tr.route.first : tr.route.second;
 }
 
-/** ' · 3 min late' when a live prediction is running behind schedule. */
-function late(leg) {
-  const mins = leg.delayMin ?? Math.round((leg.delaySec || 0) / 60);
-  return mins >= 2 ? ` · <span class="late">${mins} min late</span>` : '';
+/**
+ * A time, with the schedule next to live predictions: the predicted time, plus the
+ * struck-through scheduled time and how far off it is, or "on time".
+ */
+function clock(t, aimed, live) {
+  if (!live || !aimed) return time(t);
+  const diff = Math.round((t - aimed) / MIN);
+  if (diff === 0) return `${time(t)}<small class="ontime">on time</small>`;
+  const label = `${Math.abs(diff)} min ${diff > 0 ? 'late' : 'early'}`;
+  return `<span class="${diff > 0 ? 'late' : 'early'}">${time(t)}</span>` +
+    `<small><s aria-label="scheduled ${time(aimed)}">${time(aimed)}</s> ${label}</small>`;
 }
 
 function legText(kind, leg) {
-  if (kind === 'j') return `J Church to ${esc(leg.destination || (state.direction === 'work' ? 'downtown' : 'Balboa Park'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}${late(leg)}`;
-  if (kind === 't') return `T Third to ${esc(leg.destination || (state.direction === 'work' ? 'Sunnydale' : 'Chinatown'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}${late(leg)}`;
-  return `${esc(leg.destination || 'BART')} train${leg.cars ? ` · ${leg.cars} cars` : ''}${late(leg)}`;
+  if (kind === 'j') return `J Church to ${esc(leg.destination || (state.direction === 'work' ? 'downtown' : 'Balboa Park'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}`;
+  if (kind === 't') return `T Third to ${esc(leg.destination || (state.direction === 'work' ? 'Sunnydale' : 'Chinatown'))}${leg.vehicle ? ` · car ${esc(leg.vehicle)}` : ''}`;
+  return `${esc(leg.destination || 'BART')} train${leg.cars ? ` · ${leg.cars} cars` : ''}`;
 }
 
 const est = (leg) => (leg.arrEstimated ? ' <abbr class="est" title="Estimated from typical ride time">est.</abbr>' : '');
@@ -240,12 +247,12 @@ function tripCard(tr, now, isBest) {
     <details data-key="${esc(key)}"${openDetails.has(key) ? ' open' : ''}>
       <summary>Details</summary>
       <ol class="steps">
-        <li><span class="when">${time(tr.leaveBy)}</span> Walk ${walkStart} min from ${ENDS[d].start} to ${esc(info[ka].from)}</li>
-        <li><span class="when">${time(a.dep)}</span> ${pill(ka, a)} ${legText(ka, a)}${sched(a)}</li>
-        <li><span class="when">${time(tr.atTransfer)}</span> Arrive ${esc(info[ka].to)}${est(a)}; ${tr.transferMin} min transfer to ${esc(info[kb].from)}</li>
-        <li><span class="when">${time(b.dep)}</span> ${pill(kb, b)} ${legText(kb, b)} · ${tr.waitMin} min wait${sched(b)}</li>
-        <li><span class="when">${time(b.arr)}</span> Arrive ${esc(info[kb].to)}${est(b)}</li>
-        <li><span class="when">${time(tr.arriveAt)}</span> Walk ${walkEnd} min to ${endText}</li>
+        <li><span class="when">${time(tr.leaveBy)}</span><span>Walk ${walkStart} min from ${ENDS[d].start} to ${esc(info[ka].from)}</span></li>
+        <li><span class="when">${clock(a.dep, a.depAimed, a.depLive)}</span><span>${pill(ka, a)} ${legText(ka, a)}${sched(a)}</span></li>
+        <li><span class="when">${clock(tr.atTransfer, a.arrAimed, a.arrLive)}</span><span>Arrive ${esc(info[ka].to)}${est(a)}; ${tr.transferMin} min transfer to ${esc(info[kb].from)}</span></li>
+        <li><span class="when">${clock(b.dep, b.depAimed, b.depLive)}</span><span>${pill(kb, b)} ${legText(kb, b)} · ${tr.waitMin} min wait${sched(b)}</span></li>
+        <li><span class="when">${clock(b.arr, b.arrAimed, b.arrLive)}</span><span>Arrive ${esc(info[kb].to)}${est(b)}</span></li>
+        <li><span class="when">${time(tr.arriveAt)}</span><span>Walk ${walkEnd} min to ${endText}</span></li>
       </ol>
     </details>
   </li>`;
@@ -256,9 +263,9 @@ function renderBoards() {
   const d = state.direction;
   const legs = live.legs[d];
   const train = {
-    j: (l) => `J to ${esc(l.destination || '—')}${late(l)}`,
-    t: (l) => `T to ${esc(l.destination || '—')}${late(l)}`,
-    bart: (l) => `<i class="swatch" style="background:${esc(l.color)}"></i>${esc(l.destination)}${l.cars ? ` · ${l.cars} cars` : ''}${late(l)}`,
+    j: (l) => `J to ${esc(l.destination || '—')}`,
+    t: (l) => `T to ${esc(l.destination || '—')}`,
+    bart: (l) => `<i class="swatch" style="background:${esc(l.color)}"></i>${esc(l.destination)}${l.cars ? ` · ${l.cars} cars` : ''}`,
   };
   $('boards').innerHTML = BOARD_ORDER[d].map((kind) => {
     const { to, board } = LEGS[d][kind];
@@ -267,7 +274,7 @@ function renderBoards() {
       ? rows.map((l) => `<li>
           <span class="mins">${minsUntil(l.dep, now)}</span>
           <span class="what">${train[kind](l)}<small>reaches ${esc(to)} ${l.arrEstimated ? '~' : ''}${time(l.arr)}</small></span>
-          <span class="clock">leaves ${time(l.dep)}</span>
+          <span class="clock">${clock(l.dep, l.depAimed, l.depLive)}</span>
         </li>`).join('')
       : '<li class="empty">No live departures</li>';
     return `<div class="board"><h3>${pill(kind)} ${esc(board)}</h3><ul>${body}</ul></div>`;

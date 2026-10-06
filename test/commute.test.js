@@ -239,7 +239,8 @@ test('a predicted arrival beats the scheduled departure (delays are not hidden)'
   ] } } });
   const [leg] = muniLegs(visits, allIds).work.j;
   assert.equal(leg.dep, NOW + 25 * MIN);
-  assert.equal(leg.delayMin, 3);
+  assert.equal(leg.depAimed, NOW + 22 * MIN); // scheduled time kept for display
+  assert.equal(leg.arrAimed, NOW + 42 * MIN);
   assert.equal(leg.arr, NOW + 43 * MIN);
   assert.ok(leg.depLive && leg.arrLive);
 });
