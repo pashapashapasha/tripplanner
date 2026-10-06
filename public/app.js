@@ -25,7 +25,12 @@ function minsUntil(t, now) {
 async function refresh() {
   try {
     const res = await fetch('/api/commute');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const text = await res.text();
+      let detail = text.slice(0, 300);
+      try { detail = JSON.parse(text).error || detail; } catch {}
+      throw new Error(`HTTP ${res.status}: ${detail}`);
+    }
     data = await res.json();
     lastFetch = Date.now();
     if (!settings) {
@@ -33,7 +38,10 @@ async function refresh() {
       fillSettings();
     }
   } catch (e) {
-    $('status').textContent = `Couldn't reach the server (${e.message}). Retrying…`;
+    $('status').textContent = 'Live data unavailable. Retrying…';
+    $('banner').hidden = false;
+    $('banner').textContent = `Server error: ${e.message}`;
+    if (!data) return;
   }
   render();
 }
