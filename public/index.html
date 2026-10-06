@@ -10,22 +10,35 @@
 <body>
   <header>
     <div class="route">
-      <h1>24th &amp; Church <span class="arrow">→</span> Uber HQ</h1>
-      <p class="via">J Church or BART to Powell, then T Third. No buses.</p>
+      <h1 id="title">24th &amp; Church <span class="arrow">→</span> Uber HQ</h1>
+      <p class="via" id="via">J Church or BART to Powell, then T Third. No buses.</p>
     </div>
     <div class="status" id="status" aria-live="polite">Loading live data…</div>
   </header>
 
   <main>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Direction" id="direction">
+        <button data-value="work">To work</button>
+        <button data-value="home">To home</button>
+      </div>
+      <div class="seg" role="group" aria-label="When" id="when">
+        <button data-value="now">Now</button>
+        <button data-value="depart">Depart at</button>
+        <button data-value="arrive">Arrive by</button>
+      </div>
+      <input type="datetime-local" id="at" aria-label="Date and time" step="300" hidden>
+    </div>
+
     <div class="banner" id="banner" hidden></div>
 
     <section>
       <div class="section-head">
-        <h2>Next trips</h2>
-        <div class="filters" role="group" aria-label="First leg">
-          <button data-mode="all" class="on">All</button>
-          <button data-mode="J">J only</button>
-          <button data-mode="BART">BART only</button>
+        <h2 id="trips-title">Next trips</h2>
+        <div class="seg small" role="group" aria-label="Train" id="modes">
+          <button data-value="all">All</button>
+          <button data-value="J">J only</button>
+          <button data-value="BART">BART only</button>
         </div>
       </div>
       <ol class="trips" id="trips"></ol>
@@ -33,21 +46,17 @@
 
     <section>
       <h2>Live departures</h2>
-      <div class="boards">
-        <div class="board"><h3><span class="pill j">J</span> Church &amp; 24th, inbound</h3><ul id="board-j"></ul></div>
-        <div class="board"><h3><span class="pill bart">BART</span> 24th St Mission, northbound</h3><ul id="board-bart"></ul></div>
-        <div class="board"><h3><span class="pill t">T</span> Union Sq/Market St, southbound</h3><ul id="board-t"></ul></div>
-      </div>
+      <div class="boards" id="boards"></div>
     </section>
 
     <details class="settings">
       <summary>Walking &amp; transfer times</summary>
       <form id="settings">
-        <label>Home → J platform at Church &amp; 24th <input type="number" min="0" max="30" name="walkToJ"> min</label>
-        <label>Home → 24th St Mission BART (walk) <input type="number" min="0" max="40" name="walkToBart"> min</label>
-        <label>Powell: J platform → T platform <input type="number" min="0" max="20" name="transferJ"> min</label>
-        <label>Powell: BART platform → T platform <input type="number" min="0" max="20" name="transferBart"> min</label>
-        <label>UCSF/Chase Center → Uber HQ <input type="number" min="0" max="20" name="walkFromT"> min</label>
+        <label>Home ↔ J platform at Church &amp; 24th <input type="number" min="0" max="30" name="walkToJ"> min</label>
+        <label>Home ↔ 24th St Mission BART (walk) <input type="number" min="0" max="40" name="walkToBart"> min</label>
+        <label>Powell: J platform ↔ T platform <input type="number" min="0" max="20" name="transferJ"> min</label>
+        <label>Powell: BART platform ↔ T platform <input type="number" min="0" max="20" name="transferBart"> min</label>
+        <label>UCSF/Chase Center ↔ Uber HQ <input type="number" min="0" max="20" name="walkFromT"> min</label>
         <button type="button" id="reset">Reset to defaults</button>
       </form>
       <p class="fine" id="stops"></p>
@@ -57,7 +66,8 @@
   <footer>
     Live data: <a href="https://511.org/open-data/transit">511.org</a> (Muni) and
     <a href="https://www.bart.gov/schedules/developers/api">BART API</a>.
-    “est.” marks an arrival estimated from typical ride time because no live prediction exists yet.
+    “est.” marks an arrival estimated from typical ride time because no prediction exists yet.
+    Trips more than about an hour out use published schedules.
   </footer>
 
   <script type="module" src="/planner-ui.js"></script>

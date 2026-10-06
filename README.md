@@ -8,7 +8,11 @@ A small web app that plans the trip from 24th & Church to Uber HQ (1725 3rd St) 
 
 No buses: the JBUS/TBUS bus substitutions are filtered out.
 
-For each upcoming trip it shows when to leave, door-to-door time, arrival time, the wait at Powell, and each leg with its times. It also shows live departure boards for all three boarding points. If several first legs feed into the same T, the earlier ones are dimmed ("same T as a later option") because you can leave later and still get there at the same time.
+The **To home** toggle plans the reverse trip: T Third north from UCSF/Chase Center to Union Square, then the J outbound or BART south from Powell, then walk home.
+
+For each trip it shows when to leave, door-to-door time, arrival time, the wait at Powell, and each leg with its times. It also shows live departure boards for the three boarding points in the chosen direction. If several first legs feed into the same second train, the earlier ones are dimmed ("same T as a later option") because you can leave later and still get there at the same time.
+
+**Now / Depart at / Arrive by:** "Now" uses live predictions. A chosen date and time uses published schedules, with live predictions replacing them for anything within the live window (roughly the next hour).
 
 ## Deploy to Vercel
 
@@ -34,7 +38,8 @@ Node 18+ is required. There are no dependencies.
 ## How it works
 
 * **Muni (J, T):** a single agency-wide 511 SIRI `StopMonitoring` call per refresh. A J run's departure from Church & 24th is matched to its own arrival at Powell by trip ID, and a T run's departure from Union Square to its arrival at UCSF/Chase Center. When the downstream prediction isn't published yet, the arrival is estimated from typical ride time and marked **est.**
-* **BART:** real-time `etd` for 24th St, northbound only. Ride time to Powell comes from BART's schedule API.
-* **Rate limits:** 511 allows 60 requests per hour per key. The server caches Muni for 80 s (`MUNI_CACHE_SECONDS`) and BART for 30 s. On Vercel, the API response is also CDN-cached for 30 s, and the page stops polling while its tab is hidden.
+* **BART:** real-time `etd` at 24th St (northbound) and Powell (southbound). Ride times come from BART's schedule API, which also provides planned trips for a chosen time.
+* **Schedules:** Muni timetables come from 511's `stoptimetable` API, fetched once per date for the J/T platforms only (about 8 requests) and cached. `/api/schedule?date=YYYY-MM-DD&time=HH:MM` returns scheduled legs for both directions.
+* **Rate limits:** 511 allows 60 requests per hour per key. The server caches Muni for 80 s (`MUNI_CACHE_SECONDS`) and BART for 30 s. On Vercel, the live response is also CDN-cached for 30 s, schedule responses for an hour, and the page stops polling while its tab is hidden.
 * **Stops** are found by proximity to known coordinates using 511's stop list. If one is ever wrong, pin the 511 stop codes with `STOPS_J_ORIGIN`, `STOPS_J_POWELL`, `STOPS_T_ORIGIN`, `STOPS_T_DEST` (comma-separated).
 * Walking and transfer times (defaults: 1 min to the J, 19 min walk to BART, 6/7 min Powell transfer, 4 min from the T to the office) can be edited in the app. They are saved in your browser.

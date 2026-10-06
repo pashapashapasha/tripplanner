@@ -49,11 +49,15 @@ h3 { font-size: 14px; margin: 0 0 8px; display: flex; gap: 8px; align-items: cen
 
 section { margin-top: 22px; }
 .section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-.banner { margin-top: 16px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--urgent); color: var(--urgent); background: color-mix(in srgb, var(--urgent) 8%, transparent); font-size: 14px; }
+.banner { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--urgent); color: var(--urgent); background: color-mix(in srgb, var(--urgent) 8%, transparent); font-size: 14px; }
 
-.filters { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
-.filters button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer; }
-.filters button.on { background: var(--text); color: var(--bg); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+.seg { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+.seg button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.seg.small button { font-size: 13px; padding: 5px 12px; }
+.seg button.on { background: var(--text); color: var(--bg); }
+#at { font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--text); }
+#at[hidden] { display: none; }
 
 .trips { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .trip { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
@@ -75,6 +79,7 @@ section { margin-top: 22px; }
 .tag.best { border-color: var(--accent); color: var(--accent); }
 .tag.warn { border-color: var(--warn); color: var(--warn); }
 .est { color: var(--warn); font-size: 11px; text-decoration: none; cursor: help; }
+.sched { color: var(--muted); font-size: 11px; text-decoration: none; cursor: help; }
 
 details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 8px; }
 .steps { list-style: none; margin: 8px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--line); display: grid; gap: 6px; font-size: 14px; }

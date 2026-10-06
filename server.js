@@ -14,6 +14,7 @@ const STATIC = {
   '/index.html': ['index.html', 'text/html; charset=utf-8'],
   '/planner-ui.js': ['planner-ui.js', 'text/javascript; charset=utf-8'],
   '/itinerary.js': ['itinerary.js', 'text/javascript; charset=utf-8'],
+  '/time.js': ['time.js', 'text/javascript; charset=utf-8'],
   '/styles.css': ['styles.css', 'text/css; charset=utf-8'],
 };
 
@@ -23,14 +24,21 @@ function send(res, status, type, body, cacheControl = 'no-store') {
 }
 
 async function handle(req, res) {
-  const { pathname } = new URL(req.url, 'http://localhost');
-  if (pathname === '/api/commute') {
+  const { pathname, searchParams } = new URL(req.url, 'http://localhost');
+  if (pathname === '/api/commute' || pathname === '/api/schedule') {
     // Imported lazily so even a load-time failure is reported as JSON, not a crash.
-    const { commute } = await import('./lib/commute.js');
-    // Let Vercel's CDN share one response across viewers for a short while, which keeps
-    // us well under 511.org's 60 requests/hour even with several tabs open.
-    return send(res, 200, 'application/json', JSON.stringify(await commute()),
-      'public, max-age=0, s-maxage=30, stale-while-revalidate=30');
+    const data = await import('./lib/commute.js');
+    if (pathname === '/api/commute') {
+      // Let Vercel's CDN share one response across viewers for a short while, which keeps
+      // us well under 511.org's 60 requests/hour even with several tabs open.
+      return send(res, 200, 'application/json', JSON.stringify(await data.commute()),
+        'public, max-age=0, s-maxage=30, stale-while-revalidate=30');
+    }
+    const body = await data.schedule(searchParams.get('date'), searchParams.get('time'));
+    // Schedules don't change during the day; failures aren't cached so they can retry.
+    const ok = body.sources.muni.ok && body.sources.bart.ok;
+    return send(res, 200, 'application/json', JSON.stringify(body),
+      ok ? 'public, max-age=300, s-maxage=3600' : 'no-store');
   }
   const file = STATIC[pathname];
   if (!file) return send(res, 404, 'text/plain', 'Not found');
@@ -41,7 +49,7 @@ http
   .createServer((req, res) => {
     handle(req, res).catch((e) => {
       console.error(e);
-      if (!res.headersSent) send(res, 500, 'application/json', JSON.stringify({ error: `${e.name}: ${e.message}` }));
+      if (!res.headersSent) send(res, e.status || 500, 'application/json', JSON.stringify({ error: `${e.name}: ${e.message}` }));
       else res.end();
     });
   })
