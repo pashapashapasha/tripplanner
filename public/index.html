@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Commute to Uber HQ</title>
+  <meta name="theme-color" content="#0f1115">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="route">
+      <h1>24th &amp; Church <span class="arrow">→</span> Uber HQ</h1>
+      <p class="via">J Church or BART to Powell, then T Third. No buses.</p>
+    </div>
+    <div class="status" id="status" aria-live="polite">Loading live data…</div>
+  </header>
+
+  <main>
+    <div class="banner" id="banner" hidden></div>
+
+    <section>
+      <div class="section-head">
+        <h2>Next trips</h2>
+        <div class="filters" role="group" aria-label="First leg">
+          <button data-mode="all" class="on">All</button>
+          <button data-mode="J">J only</button>
+          <button data-mode="BART">BART only</button>
+        </div>
+      </div>
+      <ol class="trips" id="trips"></ol>
+    </section>
+
+    <section>
+      <h2>Live departures</h2>
+      <div class="boards">
+        <div class="board"><h3><span class="pill j">J</span> Church &amp; 24th, inbound</h3><ul id="board-j"></ul></div>
+        <div class="board"><h3><span class="pill bart">BART</span> 24th St Mission, northbound</h3><ul id="board-bart"></ul></div>
+        <div class="board"><h3><span class="pill t">T</span> Union Sq/Market St, southbound</h3><ul id="board-t"></ul></div>
+      </div>
+    </section>
+
+    <details class="settings">
+      <summary>Walking &amp; transfer times</summary>
+      <form id="settings">
+        <label>Home → J platform at Church &amp; 24th <input type="number" min="0" max="30" name="walkToJ"> min</label>
+        <label>Home → 24th St Mission BART (walk) <input type="number" min="0" max="40" name="walkToBart"> min</label>
+        <label>Powell: J platform → T platform <input type="number" min="0" max="20" name="transferJ"> min</label>
+        <label>Powell: BART platform → T platform <input type="number" min="0" max="20" name="transferBart"> min</label>
+        <label>UCSF/Chase Center → Uber HQ <input type="number" min="0" max="20" name="walkFromT"> min</label>
+        <button type="button" id="reset">Reset to defaults</button>
+      </form>
+      <p class="fine" id="stops"></p>
+    </details>
+  </main>
+
+  <footer>
+    Live data: <a href="https://511.org/open-data/transit">511.org</a> (Muni) and
+    <a href="https://www.bart.gov/schedules/developers/api">BART API</a>.
+    “est.” marks an arrival estimated from typical ride time because no live prediction exists yet.
+  </footer>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

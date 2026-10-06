@@ -1,0 +1,13 @@
+{
+  "name": "tripplanner",
+  "version": "1.0.0",
+  "description": "Live commute planner: 24th & Church -> (J Church or BART) -> Powell -> T Third -> Uber HQ",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "demo": "DEMO=1 node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
