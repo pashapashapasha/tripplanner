@@ -12,9 +12,9 @@ For each upcoming trip it shows when to leave, door-to-door time, arrival time, 
 
 ## Deploy to Vercel
 
-1. On vercel.com: **Add New → Project**, then import this GitHub repo. Leave the framework preset as **Other** and leave build settings empty (`vercel.json` points static output at `public/`).
+1. On vercel.com: **Add New → Project**, then import this GitHub repo. No build settings are needed: Vercel detects `server.js` and runs it as a function, and serves `public/` from its CDN.
 2. Under **Environment Variables**, add `API_511_KEY` with your 511.org token (and optionally `BART_API_KEY`).
-3. Deploy. The page is served from `public/`, and `api/commute.js` is the live-data endpoint.
+3. Deploy.
 
 If you add or change an environment variable later, redeploy so it takes effect.
 
