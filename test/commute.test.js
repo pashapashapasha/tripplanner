@@ -191,3 +191,28 @@ test('an unconfirmed train going the other way is not listed (shared stop code)'
     assert.equal(legs.work.j.length, 7);
   }
 });
+
+test('an unconfirmed train inside the predicted window is dropped, whatever its labels', () => {
+  // Labeled like an inbound J, but no Powell prediction even though Powell predictions
+  // already extend past when it would arrive: it is not heading to Powell.
+  const ghost = {
+    MonitoringRef: '14001',
+    MonitoredVehicleJourney: {
+      LineRef: 'J',
+      DirectionRef: 'IB',
+      FramedVehicleJourneyRef: { DatedVehicleJourneyRef: 'J-GHOST' },
+      MonitoredCall: {
+        StopPointRef: '14001',
+        DestinationDisplay: 'Embarcadero',
+        ExpectedDepartureTime: new Date(NOW + 5 * MIN).toISOString(),
+      },
+    },
+  };
+  const visits = parseVisits(demoStopMonitoring(NOW)).concat(parseVisits({
+    ServiceDelivery: { StopMonitoringDelivery: { MonitoredStopVisit: [ghost] } },
+  }));
+  const { j } = muniLegs(visits, allIds).work;
+  assert.ok(!j.some((l) => l.tripId === 'J-GHOST'));
+  assert.equal(j.length, 7); // later trips beyond the predicted window are still estimated
+  assert.ok(j[6].arrEstimated);
+});

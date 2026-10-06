@@ -31,6 +31,7 @@ const PILL = { j: '<span class="pill j">J</span>', t: '<span class="pill t">T</s
 
 let live = null;
 let lastFetch = 0;
+let loadedVersion = null;
 let settings = null;
 const schedules = new Map(); // 'date time' -> response | {error} | 'loading'
 const openDetails = new Set(); // trips whose Details panel is expanded, kept across re-renders
@@ -68,6 +69,9 @@ async function refresh() {
   try {
     live = await getJson('/api/commute');
     lastFetch = Date.now();
+    // A tab left open would otherwise keep running the code it was loaded with.
+    loadedVersion ??= live.version;
+    if (live.version && live.version !== loadedVersion) return location.reload();
     if (!settings) {
       settings = { ...live.defaults, ...(load('settings') || {}) };
       fillSettings();
