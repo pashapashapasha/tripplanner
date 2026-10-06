@@ -1,5 +1,6 @@
 // App entry point, locally (`npm start`) and on Vercel, which detects server.js and runs
-// it as a function. On Vercel, files in public/ are normally served by the CDN; the
+// it as a function. (Keep it the only file named server/app/index.js: Vercel picks such
+// files as the entry point, even inside public/.) On Vercel, public/ is served by the CDN; the
 // static handling below is the fallback, and what serves them locally.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -11,7 +12,7 @@ const PUBLIC = join(process.cwd(), 'public');
 const STATIC = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/index.html': ['index.html', 'text/html; charset=utf-8'],
-  '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  '/planner-ui.js': ['planner-ui.js', 'text/javascript; charset=utf-8'],
   '/itinerary.js': ['itinerary.js', 'text/javascript; charset=utf-8'],
   '/styles.css': ['styles.css', 'text/css; charset=utf-8'],
 };
