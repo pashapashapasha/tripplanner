@@ -12,14 +12,14 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 // Station names and labels for each leg, per direction.
 const LEGS = {
   work: {
-    j: { from: 'Church & 24th', to: 'Powell', board: 'Church & 24th, inbound' },
-    bart: { from: '24th St Mission', to: 'Powell St', board: '24th St Mission, northbound' },
-    t: { from: 'Union Square/Market St', to: 'UCSF/Chase Center', board: 'Union Sq/Market St, southbound' },
+    j: { from: 'Church & 24th', to: 'Powell', board: 'Church & 24th → Powell' },
+    bart: { from: '24th St Mission', to: 'Powell St', board: '24th St Mission → Powell' },
+    t: { from: 'Union Square/Market St', to: 'UCSF/Chase Center', board: 'Union Square → UCSF/Chase Center' },
   },
   home: {
-    t: { from: 'UCSF/Chase Center', to: 'Union Square/Market St', board: 'UCSF/Chase Center, northbound' },
-    j: { from: 'Powell', to: 'Church & 24th', board: 'Powell, outbound' },
-    bart: { from: 'Powell St', to: '24th St Mission', board: 'Powell St, southbound' },
+    t: { from: 'UCSF/Chase Center', to: 'Union Square/Market St', board: 'UCSF/Chase Center → Union Square' },
+    j: { from: 'Powell', to: 'Church & 24th', board: 'Powell → Church & 24th' },
+    bart: { from: 'Powell St', to: '24th St Mission', board: 'Powell → 24th St Mission' },
   },
 };
 const ENDS = {
@@ -173,10 +173,10 @@ function renderTrips() {
     return;
   }
   const best = when === 'arrive'
-    ? Math.max(...trips.filter((t) => !t.superseded).map((t) => t.leaveBy))
+    ? Math.max(...trips.map((t) => t.leaveBy))
     : Math.min(...trips.map((t) => t.arriveAt));
   $('trips').innerHTML = trips
-    .map((tr) => tripCard(tr, now, when === 'arrive' ? tr.leaveBy === best && !tr.superseded : tr.arriveAt === best))
+    .map((tr) => tripCard(tr, now, (when === 'arrive' ? tr.leaveBy : tr.arriveAt) === best))
     .join('');
 }
 
@@ -204,10 +204,8 @@ function tripCard(tr, now, isBest) {
   const otherDay = sfDate(tr.leaveBy) !== sfDate(now);
   const leaveBig = !soon ? `Leave ${time(tr.leaveBy)}` : leaveIn <= MIN ? 'Leave now' : `Leave in ${minsUntil(tr.leaveBy, now)}`;
   const leaveSub = !soon ? (otherDay ? dayFmt.format(tr.leaveBy) : `in ${minsUntil(tr.leaveBy, now)}`) : `by ${time(tr.leaveBy)}`;
-  const secondName = { j: 'J', t: 'T', bart: 'BART train' }[kb];
   const tags = [
     isBest && `<span class="tag best">${state.when === 'arrive' ? 'Latest departure' : 'Earliest arrival'}</span>`,
-    tr.superseded && `<span class="tag">Same ${secondName} as a later option</span>`,
     tr.waitMin >= 8 && `<span class="tag warn">${tr.waitMin} min wait at Powell</span>`,
     tr.scheduled && '<span class="tag">Scheduled times</span>',
   ].filter(Boolean).join('');
@@ -216,7 +214,7 @@ function tripCard(tr, now, isBest) {
   const walkEnd = settings[tr.route.walkEnd];
   const endText = d === 'work' ? `Uber HQ, ${esc(live.destination.address)}` : 'home (24th &amp; Church)';
 
-  return `<li class="trip ${tr.superseded ? 'dim' : ''}">
+  return `<li class="trip">
     <div class="trip-top">
       <div class="leave ${soon ? urgency : ''}">
         <div class="big">${leaveBig}</div>
@@ -247,18 +245,22 @@ function renderBoards() {
   const now = Date.now();
   const d = state.direction;
   const legs = live.legs[d];
-  const arrLabel = (kind, l) => `${LEGS[d][kind].to.replace('Union Square/Market St', 'Union Sq')} ${time(l.arr)}${l.arrEstimated ? ' est.' : ''}`;
-  const label = {
-    j: (l) => `to ${esc(l.destination || '—')} · ${arrLabel('j', l)}`,
-    t: (l) => `to ${esc(l.destination || '—')} · ${arrLabel('t', l)}`,
+  const train = {
+    j: (l) => `J to ${esc(l.destination || '—')}`,
+    t: (l) => `T to ${esc(l.destination || '—')}`,
     bart: (l) => `<i class="swatch" style="background:${esc(l.color)}"></i>${esc(l.destination)}${l.cars ? ` · ${l.cars} cars` : ''}`,
   };
   $('boards').innerHTML = BOARD_ORDER[d].map((kind) => {
+    const { to, board } = LEGS[d][kind];
     const rows = legs[kind].filter((l) => l.dep > now - 30000).slice(0, 6);
     const body = rows.length
-      ? rows.map((l) => `<li><span class="mins">${minsUntil(l.dep, now)}</span><span class="what">${label[kind](l)}</span><span class="clock">${time(l.dep)}</span></li>`).join('')
+      ? rows.map((l) => `<li>
+          <span class="mins">${minsUntil(l.dep, now)}</span>
+          <span class="what">${train[kind](l)}<small>reaches ${esc(to)} ${l.arrEstimated ? '~' : ''}${time(l.arr)}</small></span>
+          <span class="clock">leaves ${time(l.dep)}</span>
+        </li>`).join('')
       : '<li class="empty">No live departures</li>';
-    return `<div class="board"><h3>${pill(kind)} ${esc(LEGS[d][kind].board)}</h3><ul>${body}</ul></div>`;
+    return `<div class="board"><h3>${pill(kind)} ${esc(board)}</h3><ul>${body}</ul></div>`;
   }).join('');
   if (live.stops) {
     $('stops').textContent = `Stops in use — J: ${live.stops.j.join(', ') || 'none found'}; T: ${live.stops.t.join(', ') || 'none found'}.`;

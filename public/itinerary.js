@@ -54,20 +54,17 @@ export function buildItineraries(legs, settings, opts = {}) {
   const wanted = makeable.filter((tr) =>
     when === 'depart' ? tr.leaveBy >= at : when === 'arrive' ? tr.arriveAt <= at : true);
 
-  // Several first legs can feed the same second leg; the one leaving latest is the smart pick.
-  const latest = new Map();
+  // Several first legs can feed the same second leg (e.g. two J trains reaching Powell in
+  // time for the same T). Leaving earlier only means waiting longer, so keep the one
+  // that leaves latest.
+  const best = new Map();
   for (const tr of wanted) {
     const key = tr.legs[1].tripId;
-    if (!latest.has(key) || tr.leaveBy > latest.get(key).leaveBy) latest.set(key, tr);
+    if (!best.has(key) || tr.leaveBy > best.get(key).leaveBy) best.set(key, tr);
   }
-  for (const tr of wanted) tr.superseded = latest.get(tr.legs[1].tripId) !== tr;
-
-  const byArrival = (a, b) => a.arriveAt - b.arriveAt || b.leaveBy - a.leaveBy;
-  if (when === 'arrive') {
-    // The options that get you there closest to (but not after) the target time.
-    return wanted.sort(byArrival).slice(-limit);
-  }
-  return wanted.sort(byArrival).slice(0, limit);
+  const options = [...best.values()].sort((a, b) => a.arriveAt - b.arriveAt || b.leaveBy - a.leaveBy);
+  // For "arrive by", the options that get you there closest to (but not after) the target.
+  return when === 'arrive' ? options.slice(-limit) : options.slice(0, limit);
 }
 
 /**

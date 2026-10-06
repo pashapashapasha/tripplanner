@@ -108,9 +108,12 @@ function checkTrips(trips, now) {
     assert.ok(b.dep >= a.arr + tr.transferMin * MIN, 'second leg must leave after the transfer');
     assert.ok(tr.leaveBy >= now - 30000, 'must still be makeable');
   }
-  const perSecond = new Map();
-  for (const tr of trips) if (!tr.superseded) perSecond.set(tr.legs[1].tripId, (perSecond.get(tr.legs[1].tripId) || 0) + 1);
-  assert.ok([...perSecond.values()].every((n) => n === 1), 'one recommended option per second leg');
+  const seconds = trips.map((tr) => tr.legs[1].tripId);
+  assert.equal(new Set(seconds).size, seconds.length, 'one option per second leg');
+  for (const tr of trips) {
+    const rival = trips.find((o) => o !== tr && o.legs[1].tripId === tr.legs[1].tripId);
+    assert.ok(!rival, 'no option that only leaves earlier for the same connection');
+  }
 }
 
 test('to work now: first catchable T, sorted by arrival, impossible BART excluded', () => {
@@ -146,7 +149,9 @@ test('depart at / arrive by use scheduled legs for a future time', () => {
   const departing = buildItineraries(legs, DEFAULT_SETTINGS, { now: NOW, when: 'depart', at });
   checkTrips(departing, NOW);
   assert.ok(departing.every((tr) => tr.leaveBy >= at && tr.scheduled));
-  assert.ok(departing.some((tr) => tr.mode === 'BART'));
+  const bartOnly = buildItineraries(legs, DEFAULT_SETTINGS, { now: NOW, when: 'depart', at, modes: ['BART'] });
+  checkTrips(bartOnly, NOW);
+  assert.ok(bartOnly.every((tr) => tr.mode === 'BART'));
 
   const target = parseSf(date, '09:00');
   const arriving = buildItineraries(legs, DEFAULT_SETTINGS, { now: NOW, when: 'arrive', at: target });
@@ -160,4 +165,29 @@ test('mergeLegs keeps live predictions and fills in schedule beyond them', () =>
   const scheduled = [{ tripId: 'a', dep: 9 * MIN }, { tripId: 'x', dep: 15 * MIN }, { tripId: 'y', dep: 30 * MIN }];
   assert.deepEqual(mergeLegs(liveLegs, scheduled).map((l) => l.tripId), ['a', 'b', 'y']);
   assert.deepEqual(mergeLegs([], scheduled), scheduled);
+});
+
+test('an unconfirmed train going the other way is not listed (shared stop code)', () => {
+  const payload = demoStopMonitoring(NOW);
+  const wrongWay = (dir) => ({
+    MonitoringRef: '14001',
+    MonitoredVehicleJourney: {
+      LineRef: 'J',
+      ...(dir ? { DirectionRef: dir } : {}),
+      FramedVehicleJourneyRef: { DatedVehicleJourneyRef: `J-WRONG-${dir}` },
+      MonitoredCall: {
+        StopPointRef: '14001', // same code as the inbound platform
+        DestinationDisplay: 'Balboa Park',
+        ExpectedDepartureTime: new Date(NOW + 12 * MIN).toISOString(),
+      },
+    },
+  });
+  for (const dir of ['OB', undefined]) {
+    const visits = parseVisits(payload).concat(parseVisits({
+      ServiceDelivery: { StopMonitoringDelivery: { MonitoredStopVisit: [wrongWay(dir)] } },
+    }));
+    const legs = muniLegs(visits, allIds);
+    assert.ok(!legs.work.j.some((l) => l.tripId.startsWith('J-WRONG')), `direction ${dir}`);
+    assert.equal(legs.work.j.length, 7);
+  }
 });
