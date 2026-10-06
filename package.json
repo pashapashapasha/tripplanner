@@ -6,8 +6,8 @@
   "private": true,
   "engines": { "node": ">=18" },
   "scripts": {
-    "start": "node server.js",
-    "demo": "DEMO=1 node server.js",
+    "start": "node local-server.js",
+    "demo": "DEMO=1 node local-server.js",
     "test": "node --test test/*.test.js"
   }
 }

@@ -1,4 +1,5 @@
-// Local dev server. On Vercel, public/ is served statically and api/commute.js runs instead.
+// Local dev server (deliberately not named server.js: Vercel would deploy that as the
+// whole app). On Vercel, public/ is served statically and api/commute.js runs instead.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
