@@ -163,6 +163,9 @@ function renderTrips() {
   const { when, at, direction } = state;
   $('trips-title').textContent = when === 'now' ? 'Next trips'
     : `${when === 'depart' ? 'Leaving after' : 'Arriving by'} ${time(at)}${sfDate(at) === sfDate(now) ? '' : `, ${dayFmt.format(at)}`}`;
+  const note = when === 'now' ? null : currentSchedule()?.sources?.muni.note;
+  $('trips-note').hidden = !note;
+  $('trips-note').textContent = note || '';
   if (when !== 'now' && currentSchedule() === 'loading') {
     $('trips').innerHTML = '<li class="empty">Loading schedule…</li>';
     return;

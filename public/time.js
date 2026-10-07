@@ -46,3 +46,8 @@ export function parseSf(date, clock = '00:00') {
   const [hh, mm] = clock.split(':').map(Number);
   return sfTime(y, m, d, hh, mm);
 }
+
+/** 'YYYY-MM-DD' `days` after `date`. */
+export function addDays(date, days) {
+  return sfDate(parseSf(date, '12:00') + days * 86400000);
+}
